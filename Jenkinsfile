@@ -7,8 +7,7 @@ pipeline {
         AWS_ACCOUNT_ID = '208805232757'
         ECR_REGISTRY   = '208805232757.dkr.ecr.ap-south-1.amazonaws.com'
         IMAGE_NAME     = "${ECR_REGISTRY}/seclock"
-        AWS_CREDS      = credentials('aws-ecr-credentials')     // Jenkins AWS credentials
-        GITHUB_TOKEN   = credentials('github-token')             // Jenkins Secret Text credential
+        AWS_CREDS      = 'aws-ecr-credentials'                   // Jenkins credential ID (used in ECR stage)
         SONAR_HOST     = 'http://localhost:9000'                 // SonarQube URL
         SONAR_TOKEN    = credentials('sonarqube-token')          // Jenkins Secret Text credential
         PYTHON_VERSION = '3.11'
@@ -198,13 +197,15 @@ pipeline {
                     sh """
                         sed -i 's|image: .*seclock.*|image: ${env.IMAGE_TAGGED}|g' ${K8S_MANIFEST}
                     """
-                    sh """
-                        git config user.email "jenkins@seclock.ci"
-                        git config user.name "Jenkins CI"
-                        git add ${K8S_MANIFEST}
-                        git commit -m "ci: update image tag to ${env.IMAGE_TAG} [skip ci]" || true
-                        git push https://${GITHUB_TOKEN}@github.com/denitjoseph/seclock.git HEAD:${env.BRANCH_NAME}
-                    """
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GH_TOKEN')]) {
+                        sh """
+                            git config user.email "jenkins@seclock.ci"
+                            git config user.name "Jenkins CI"
+                            git add ${K8S_MANIFEST}
+                            git commit -m "ci: update image tag to ${env.IMAGE_TAG} [skip ci]" || true
+                            git push https://\${GH_TOKEN}@github.com/denitjoseph/seclock.git HEAD:${env.BRANCH_NAME}
+                        """
+                    }
                 }
                 echo '🔄 ArgoCD will auto-sync the new image tag to the cluster.'
             }
