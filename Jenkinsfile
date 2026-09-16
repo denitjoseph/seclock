@@ -68,7 +68,7 @@ pipeline {
                 echo '📊 Running SonarQube analysis...'
 
                 withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         script {
                             def scannerHome = tool 'SonarScanner'
                             sh """
