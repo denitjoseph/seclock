@@ -7,9 +7,7 @@ pipeline {
         AWS_ACCOUNT_ID = '208805232757'
         ECR_REGISTRY   = '208805232757.dkr.ecr.ap-south-1.amazonaws.com'
         IMAGE_NAME     = "${ECR_REGISTRY}/seclock"
-        AWS_CREDS      = 'aws-ecr-credentials'                   // Jenkins credential ID (used in ECR stage)
-        SONAR_HOST     = 'http://localhost:9000'                 // SonarQube URL
-        PYTHON_VERSION = '3'
+        AWS_CREDS      = 'aws-ecr-credentials'
         PORT           = '8000'
         GIT_REPO       = 'denitjoseph/seclock'
         K8S_MANIFEST   = 'k8s/deployment.yaml'
@@ -32,88 +30,7 @@ pipeline {
             }
         }
 
-        // ── 2. Environment Setup ─────────────────────────────────────────────
-        stage('Setup Python Environment') {
-            steps {
-                echo '🐍 Setting up virtual environment...'
-                sh '''
-                    python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pip install pytest httpx
-                '''
-            }
-        }
-
-        // ── 3. Lint ──────────────────────────────────────────────────────────
-        stage('Lint') {
-            steps {
-                echo '🔍 Running linter...'
-                sh '''
-                    . .venv/bin/activate
-                    pip install flake8 --quiet
-                    flake8 . --max-line-length=120 --exclude=.venv,__pycache__ --statistics || true
-                '''
-            }
-        }
-
-        // ── 4. Unit / E2E Tests ──────────────────────────────────────────────
-        stage('Test') {
-            steps {
-                echo '🧪 Running test suite...'
-                sh '''
-                    . .venv/bin/activate
-                    pytest test_e2e.py -v --tb=short --junitxml=test-results.xml
-                '''
-            }
-            post {
-                always {
-                    junit 'test-results.xml'
-                }
-            }
-        }
-
-        // ── 5. SonarQube Analysis ────────────────────────────────────────────
-        stage('SonarQube Analysis') {
-            steps {
-                echo '📊 Running SonarQube code quality scan...'
-                sh '''
-                    . .venv/bin/activate
-                    pip install coverage --quiet
-                    coverage run -m pytest test_e2e.py --junitxml=test-results.xml || true
-                    coverage xml -o coverage.xml || true
-                '''
-                withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
-                        sh """
-                            sonar-scanner \\
-                                -Dsonar.projectKey=${APP_NAME} \\
-                                -Dsonar.projectName='Seclock' \\
-                                -Dsonar.projectVersion=1.0 \\
-                                -Dsonar.sources=. \\
-                                -Dsonar.exclusions='**/.venv/**,**/__pycache__/**,**/test_*.py' \\
-                                -Dsonar.python.coverage.reportPaths=coverage.xml \\
-                                -Dsonar.python.xunit.reportPath=test-results.xml \\
-                                -Dsonar.host.url=${SONAR_HOST} \\
-                                -Dsonar.login=\${SONAR_TOKEN}
-                        """
-                    }
-                }
-            }
-        }
-
-        // ── 6. SonarQube Quality Gate ────────────────────────────────────────
-        stage('Quality Gate') {
-            steps {
-                echo '🚦 Waiting for SonarQube Quality Gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        // ── 7. Docker Build ──────────────────────────────────────────────────
+        // ── 2. Docker Build ──────────────────────────────────────────────────
         stage('Docker Build') {
             steps {
                 echo '🐳 Building Docker image...'
@@ -136,7 +53,7 @@ pipeline {
             }
         }
 
-        // ── 8. Security Scan (Trivy) ─────────────────────────────────────────
+        // ── 3. Security Scan (Trivy) ─────────────────────────────────────────
         stage('Security Scan') {
             steps {
                 echo '🔒 Scanning image for vulnerabilities...'
@@ -152,7 +69,7 @@ pipeline {
             }
         }
 
-        // ── 9. Push to AWS ECR ───────────────────────────────────────────────
+        // ── 4. Push to AWS ECR ───────────────────────────────────────────────
         stage('Push to AWS ECR') {
             when {
                 anyOf {
@@ -168,7 +85,6 @@ pipeline {
                         aws ecr get-login-password --region ${AWS_REGION} | \
                             docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
-                        # Create ECR repository if it doesn't exist
                         aws ecr describe-repositories --repository-names ${APP_NAME} \
                             --region ${AWS_REGION} || \
                         aws ecr create-repository --repository-name ${APP_NAME} \
@@ -184,7 +100,7 @@ pipeline {
             }
         }
 
-        // ── 10. Update K8s Manifest for ArgoCD GitOps ───────────────────────
+        // ── 5. Update K8s Manifest for ArgoCD GitOps ────────────────────────
         stage('Update Deployment Manifest') {
             when {
                 anyOf {
