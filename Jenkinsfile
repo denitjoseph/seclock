@@ -77,6 +77,9 @@ pipeline {
                     )
                 ]) {
                     sh '''
+                        aws ecr describe-repositories --repository-names ${ECR_REPOSITORY} --region ${AWS_REGION} || \
+                        aws ecr create-repository --repository-name ${ECR_REPOSITORY} --region ${AWS_REGION}
+
                         aws ecr get-login-password \
                             --region ${AWS_REGION} | \
                         docker login \
