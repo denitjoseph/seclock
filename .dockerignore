@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# Docker itself
+Dockerfile
+.dockerignore
+
+# Dev / test files
+test_e2e.py
+run.sh
+*.md
+
+# IDE
+.vscode/
+.idea/
