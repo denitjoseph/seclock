@@ -36,7 +36,7 @@ spec:
       # Pull from AWS ECR — update YOUR_AWS_ACCOUNT_ID before applying
       containers:
         - name: seclock
-          image: YOUR_AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/seclock:latest
+          image: 208805232757.dkr.ecr.ap-south-1.amazonaws.com/seclock:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000

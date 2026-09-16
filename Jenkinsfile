@@ -4,8 +4,8 @@ pipeline {
     environment {
         APP_NAME       = 'seclock'
         AWS_REGION     = 'ap-south-1'
-        AWS_ACCOUNT_ID = credentials('aws-account-id')          // Jenkins Secret Text credential
-        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        AWS_ACCOUNT_ID = '208805232757'
+        ECR_REGISTRY   = '208805232757.dkr.ecr.ap-south-1.amazonaws.com'
         IMAGE_NAME     = "${ECR_REGISTRY}/seclock"
         AWS_CREDS      = credentials('aws-ecr-credentials')     // Jenkins AWS credentials
         SONAR_HOST     = 'http://localhost:9000'                 // SonarQube URL
