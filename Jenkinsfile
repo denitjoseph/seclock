@@ -9,7 +9,7 @@ pipeline {
         IMAGE_NAME     = "${ECR_REGISTRY}/seclock"
         AWS_CREDS      = 'aws-ecr-credentials'                   // Jenkins credential ID (used in ECR stage)
         SONAR_HOST     = 'http://localhost:9000'                 // SonarQube URL
-        PYTHON_VERSION = '3.11'
+        PYTHON_VERSION = '3'
         PORT           = '8000'
         GIT_REPO       = 'denitjoseph/seclock'
         K8S_MANIFEST   = 'k8s/deployment.yaml'
@@ -37,7 +37,7 @@ pipeline {
             steps {
                 echo '🐍 Setting up virtual environment...'
                 sh '''
-                    python${PYTHON_VERSION} -m venv .venv
+                    python3 -m venv .venv
                     . .venv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
