@@ -19,7 +19,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: seclock
@@ -33,7 +33,6 @@ spec:
       labels:
         app: seclock
     spec:
-      # Pull from AWS ECR — update YOUR_AWS_ACCOUNT_ID before applying
       containers:
         - name: seclock
           image: 208805232757.dkr.ecr.ap-south-1.amazonaws.com/seclock:latest
@@ -49,11 +48,11 @@ spec:
               value: "production"
           resources:
             requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
               cpu: "250m"
               memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
           livenessProbe:
             httpGet:
               path: /api/state
@@ -109,8 +108,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: seclock
-  minReplicas: 2
-  maxReplicas: 5
+  minReplicas: 1
+  maxReplicas: 2
   metrics:
     - type: Resource
       resource:
