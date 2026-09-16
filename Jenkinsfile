@@ -38,17 +38,19 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    script {
-                        def scannerHome = tool 'SonarScanner'
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('SonarQube') {
+                        script {
+                            def scannerHome = tool 'SonarScanner'
 
-                        sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=seclock \
-                                -Dsonar.projectName=seclock \
-                                -Dsonar.sources=. \
-                                -Dsonar.token=${env.SONAR_TOKEN ?: ''}
-                        """
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=seclock \
+                                    -Dsonar.projectName=seclock \
+                                    -Dsonar.sources=. \
+                                    -Dsonar.token=\${SONAR_TOKEN}
+                            """
+                        }
                     }
                 }
             }
