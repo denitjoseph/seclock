@@ -8,6 +8,7 @@ pipeline {
         ECR_REGISTRY   = '208805232757.dkr.ecr.ap-south-1.amazonaws.com'
         IMAGE_NAME     = "${ECR_REGISTRY}/seclock"
         AWS_CREDS      = credentials('aws-ecr-credentials')     // Jenkins AWS credentials
+        GITHUB_TOKEN   = credentials('github-token')             // Jenkins Secret Text credential
         SONAR_HOST     = 'http://localhost:9000'                 // SonarQube URL
         SONAR_TOKEN    = credentials('sonarqube-token')          // Jenkins Secret Text credential
         PYTHON_VERSION = '3.11'
@@ -202,7 +203,7 @@ pipeline {
                         git config user.name "Jenkins CI"
                         git add ${K8S_MANIFEST}
                         git commit -m "ci: update image tag to ${env.IMAGE_TAG} [skip ci]" || true
-                        git push origin HEAD:${env.BRANCH_NAME}
+                        git push https://${GITHUB_TOKEN}@github.com/denitjoseph/seclock.git HEAD:${env.BRANCH_NAME}
                     """
                 }
                 echo '🔄 ArgoCD will auto-sync the new image tag to the cluster.'
