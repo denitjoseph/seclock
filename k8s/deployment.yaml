@@ -3,31 +3,18 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: seclock
-  labels:
-    app: seclock
-    managed-by: argocd
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: seclock
+  name: seclock-deployment
   namespace: seclock
-  labels:
-    app: seclock
-    version: "1.0.0"
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: seclock
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -36,44 +23,8 @@ spec:
       containers:
         - name: seclock
           image: 208805232757.dkr.ecr.ap-south-1.amazonaws.com/seclock:latest
-          imagePullPolicy: Always
           ports:
             - containerPort: 8000
-              name: http
-              protocol: TCP
-          env:
-            - name: PORT
-              value: "8000"
-            - name: ENVIRONMENT
-              value: "production"
-          resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "250m"
-              memory: "256Mi"
-          livenessProbe:
-            httpGet:
-              path: /api/state
-              port: 8000
-            initialDelaySeconds: 15
-            periodSeconds: 20
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /api/state
-              port: 8000
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            failureThreshold: 3
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
-            runAsNonRoot: true
-            runAsUser: 1000
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
 
 ---
 apiVersion: v1
@@ -81,45 +32,11 @@ kind: Service
 metadata:
   name: seclock-service
   namespace: seclock
-  labels:
-    app: seclock
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
 spec:
   type: LoadBalancer
   selector:
     app: seclock
   ports:
-    - name: http
-      protocol: TCP
+    - protocol: TCP
       port: 80
       targetPort: 8000
-
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: seclock-hpa
-  namespace: seclock
-  annotations:
-    argocd.argoproj.io/sync-wave: "4"
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: seclock
-  minReplicas: 1
-  maxReplicas: 2
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
