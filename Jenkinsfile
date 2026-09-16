@@ -68,17 +68,18 @@ pipeline {
                 echo '📊 Running SonarQube analysis...'
 
                 withSonarQubeEnv('SonarQube') {
-                    script {
-
-                        def scannerHome = tool 'SonarScanner'
-
-                        sh """
-                            ${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=${APP_NAME} \
-                                -Dsonar.projectName=${APP_NAME} \
-                                -Dsonar.sources=. \
-                                -Dsonar.exclusions=venv/**,.git/**,**/__pycache__/**
-                        """
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        script {
+                            def scannerHome = tool 'SonarScanner'
+                            sh """
+                                ${scannerHome}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=${APP_NAME} \
+                                    -Dsonar.projectName=${APP_NAME} \
+                                    -Dsonar.sources=. \
+                                    -Dsonar.exclusions=venv/**,.git/**,**/__pycache__/** \
+                                    -Dsonar.token=\${SONAR_TOKEN}
+                            """
+                        }
                     }
                 }
             }
