@@ -9,7 +9,6 @@ pipeline {
         IMAGE_NAME     = "${ECR_REGISTRY}/seclock"
         AWS_CREDS      = 'aws-ecr-credentials'                   // Jenkins credential ID (used in ECR stage)
         SONAR_HOST     = 'http://localhost:9000'                 // SonarQube URL
-        SONAR_TOKEN    = credentials('sonarqube-token')          // Jenkins Secret Text credential
         PYTHON_VERSION = '3.11'
         PORT           = '8000'
         GIT_REPO       = 'denitjoseph/seclock'
@@ -86,18 +85,20 @@ pipeline {
                     coverage xml -o coverage.xml || true
                 '''
                 withSonarQubeEnv('SonarQube') {
-                    sh """
-                        sonar-scanner \
-                            -Dsonar.projectKey=${APP_NAME} \
-                            -Dsonar.projectName='Seclock' \
-                            -Dsonar.projectVersion=1.0 \
-                            -Dsonar.sources=. \
-                            -Dsonar.exclusions='**/.venv/**,**/__pycache__/**,**/test_*.py' \
-                            -Dsonar.python.coverage.reportPaths=coverage.xml \
-                            -Dsonar.python.xunit.reportPath=test-results.xml \
-                            -Dsonar.host.url=${SONAR_HOST} \
-                            -Dsonar.login=${SONAR_TOKEN}
-                    """
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            sonar-scanner \\
+                                -Dsonar.projectKey=${APP_NAME} \\
+                                -Dsonar.projectName='Seclock' \\
+                                -Dsonar.projectVersion=1.0 \\
+                                -Dsonar.sources=. \\
+                                -Dsonar.exclusions='**/.venv/**,**/__pycache__/**,**/test_*.py' \\
+                                -Dsonar.python.coverage.reportPaths=coverage.xml \\
+                                -Dsonar.python.xunit.reportPath=test-results.xml \\
+                                -Dsonar.host.url=${SONAR_HOST} \\
+                                -Dsonar.login=\${SONAR_TOKEN}
+                        """
+                    }
                 }
             }
         }
